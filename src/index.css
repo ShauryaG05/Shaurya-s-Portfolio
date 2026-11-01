@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-azure: #3066e4;
+  --color-navy: #16384f;
+  --color-butter: #ffe98a;
+  --color-paper: #fafaf5;
+  --color-ink: #0a0a0a;
+}
+html { scroll-behavior: smooth; }
+body { @apply bg-paper font-sans text-ink antialiased; }
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
+@keyframes sweep { from { transform: translateX(-120%); } to { transform: translateX(420%); } }
+.sweep { animation: sweep 10s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .sweep { animation: none; } html { scroll-behavior: auto; } }
