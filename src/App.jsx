@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useReducedMotion } from 'motion/react'
-import { ArrowUpRight, EnvelopeSimple, GithubLogo, LinkedinLogo, HandWaving, X } from '@phosphor-icons/react'
+import { ArrowUpRight, EnvelopeSimple, GithubLogo, LinkedinLogo, HandWaving, X, Sparkle, ChatCircleDots } from '@phosphor-icons/react'
 import { content as c } from './content'
 
 const ext = { target: '_blank', rel: 'noopener noreferrer' }
@@ -60,9 +60,9 @@ function Hero() {
   )
 }
 
-const Section = ({ id, title, aside, className = '', children }) => (
-  <section id={id} className={`rounded-[28px] p-6 sm:p-10 ${className}`}>
-    <div className="grid gap-6 md:grid-cols-[160px_1fr] md:gap-10">
+const Section = ({ id, title, aside, className = '', sidebarClass = 'md:grid-cols-[160px_1fr]', onPointerMove, children }) => (
+  <section id={id} onPointerMove={onPointerMove} className={`rounded-[28px] p-6 sm:p-10 ${className}`}>
+    <div className={`grid gap-6 ${sidebarClass} md:gap-10`}>
       <div><h2 className="text-sm font-semibold tracking-tight opacity-60">{title}</h2>{aside}</div>
       <div>{children}</div>
     </div>
@@ -75,13 +75,16 @@ const themes = [
   { bg: 'radial-gradient(rgba(250,250,245,.3) 1.5px,transparent 1.6px) 0 0/16px 16px,#16384f', solid: '#16384f', dark: true },
 ]
 
-function ProjectCard({ p, i, onOpen }) {
+function ProjectCard({ p, i, onOpen, onHover }) {
   const t = themes[i % themes.length]
   const host = new URL(p.url).hostname
   const move = (e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty('--x', `${e.clientX - r.left}px`); e.currentTarget.style.setProperty('--y', `${e.clientY - r.top}px`) }
   return (
     <motion.li initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ delay: i * 0.1, duration: 0.5, ease }}>
-      <button type="button" aria-haspopup="dialog" onClick={(e) => onOpen(i, e)} onPointerMove={move} aria-label={`Open ${p.name}`}
+      <button type="button" aria-haspopup="dialog" onClick={(e) => onOpen(i, e)} onPointerMove={move}
+        onMouseEnter={() => onHover?.(i)} onMouseLeave={() => onHover?.(null)}
+        onFocus={() => onHover?.(i)} onBlur={() => onHover?.(null)}
+        aria-label={`Open ${p.name}`}
         className={`card group relative flex aspect-[4/5] w-full cursor-pointer flex-col justify-end overflow-hidden rounded-2xl p-5 text-left shadow-[0_1px_2px_rgba(10,10,10,.1),0_12px_32px_rgba(10,10,10,.12)] transition-[transform,box-shadow,opacity] duration-300 hover:-translate-y-1 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-azure ${t.dark ? 'text-paper' : 'text-ink'}`}>
         <div aria-hidden className="absolute inset-0 transition-transform duration-700 group-hover:scale-110" style={{ background: t.bg }} />
         <div aria-hidden className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: 'radial-gradient(220px circle at var(--x,50%) var(--y,50%),rgba(255,255,255,.4),transparent 70%)' }} />
@@ -96,6 +99,134 @@ function ProjectCard({ p, i, onOpen }) {
         </div>
       </button>
     </motion.li>
+  )
+}
+
+const projectIntros = [
+  {
+    badge: 'Packport',
+    text: 'A streamlined package and shipping logistics platform built for modern tracking.',
+  },
+  {
+    badge: 'MVF',
+    text: 'Predictive forecasting and trend analysis for cinema and streaming releases.',
+  },
+  {
+    badge: 'Strome Sense',
+    text: 'Real-time IoT environmental monitoring and sensory data intelligence.',
+  },
+]
+
+const idleTips = [
+  {
+    badge: 'Shaurya · guide',
+    text: "Here are a few things I've built recently — hover over a project to take a look!",
+    wave: true,
+  },
+  {
+    badge: 'Interactive Tip',
+    text: 'Click on any project card to expand an interactive deep-dive preview.',
+    wave: false,
+  },
+  {
+    badge: 'Craft & Motion',
+    text: 'Every project focuses on clean architecture, thoughtful motion, and user delight.',
+    wave: false,
+  },
+]
+
+function ProjectNarrator({ badgeRef, hoveredIndex, mx, my }) {
+  const reduce = useReducedMotion()
+  const [tipIndex, setTipIndex] = useState(0)
+
+  const spring = { stiffness: 120, damping: 16 }
+  const rx = useSpring(useTransform(my, [-1, 1], [6, -6]), spring)
+  const ry = useSpring(useTransform(mx, [-1, 1], [-8, 8]), spring)
+
+  const isHovered = hoveredIndex !== null && projectIntros[hoveredIndex]
+  const currentMsg = isHovered ? projectIntros[hoveredIndex] : idleTips[tipIndex % idleTips.length]
+  const msgKey = isHovered ? `project-${hoveredIndex}` : `tip-${tipIndex}`
+
+  const cycleTip = () => {
+    setTipIndex((v) => (v + 1) % idleTips.length)
+  }
+
+  return (
+    <div className="mt-4 flex flex-col items-start">
+      {/* Comic speech bubble with pointer tail */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={msgKey}
+          initial={{ opacity: 0, scale: 0.9, y: 6, filter: 'blur(3px)' }}
+          animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, scale: 0.92, y: -4, filter: 'blur(3px)' }}
+          transition={{ type: 'spring', stiffness: 360, damping: 24 }}
+          className="relative mb-3.5 w-full max-w-[260px] rounded-2xl bg-white p-3.5 text-ink shadow-[0_2px_8px_rgba(10,10,10,.08),0_12px_24px_rgba(10,10,10,.1)] ring-1 ring-black/5"
+        >
+          <div className="flex items-center justify-between gap-1 text-[11px] font-bold uppercase tracking-wider text-azure">
+            <span className="flex items-center gap-1.5 truncate">
+              {currentMsg.wave ? (
+                <motion.span
+                  className="inline-block origin-bottom-right"
+                  animate={reduce ? {} : { rotate: [0, 18, -8, 18, -4, 0] }}
+                  transition={{ duration: 1.4, repeat: 2, repeatDelay: 1 }}
+                >
+                  <HandWaving size={14} weight="bold" />
+                </motion.span>
+              ) : (
+                <Sparkle size={14} weight="bold" />
+              )}
+              {currentMsg.badge}
+            </span>
+            {isHovered ? (
+              <span className="rounded bg-azure/10 px-1.5 py-0.5 text-[9px] font-semibold text-azure">preview</span>
+            ) : (
+              <span className="text-[10px] font-normal text-ink/40">tap avatar</span>
+            )}
+          </div>
+          <p className="mt-1 text-xs leading-relaxed font-medium text-ink/90 sm:text-[13px]">
+            {currentMsg.text}
+          </p>
+
+          {/* Speech bubble pointer tail directed down to avatar */}
+          <div
+            aria-hidden
+            className="absolute -bottom-2 left-8 size-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-white drop-shadow-[0_2px_1px_rgba(10,10,10,.06)]"
+          />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Interactive Avatar Container */}
+      <motion.div
+        ref={badgeRef}
+        style={{ rotateX: rx, rotateY: ry, transformPerspective: 800 }}
+        animate={reduce ? {} : { y: [0, -6, 0] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+        className="group relative cursor-pointer select-none self-start pl-2"
+        onClick={cycleTip}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.96 }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); cycleTip() } }}
+        aria-label="Shaurya avatar guide. Click to cycle commentary."
+      >
+        <div className="relative size-24 overflow-hidden rounded-full bg-gradient-to-b from-paper via-white to-[#e4e9f5] p-1 shadow-[0_2px_8px_rgba(10,10,10,.12),0_10px_24px_rgba(10,10,10,.14)] ring-2 ring-black/5 sm:size-28">
+          <img
+            src="/avatar.png"
+            alt={c.name}
+            draggable={false}
+            className="size-full object-contain object-bottom transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+
+        {/* Small floating hint pill */}
+        <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] font-medium text-ink/70 transition-colors group-hover:bg-azure group-hover:text-paper">
+          <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          Shaurya · guide
+        </span>
+      </motion.div>
+    </div>
   )
 }
 
@@ -144,20 +275,65 @@ function Overlay({ p, t, origin, onClose }) {
 
 function Work() {
   const [open, setOpen] = useState(null)
+  const [hovered, setHovered] = useState(null)
   const badge = useRef(null), trig = useRef(null)
-  const launch = (i, e) => { trig.current = e.currentTarget; const r = badge.current.getBoundingClientRect(); setOpen({ i, x: r.left + r.width / 2, y: r.top + r.height / 2 }) }
+  const mx = useMotionValue(0), my = useMotionValue(0)
+
+  const onPointerMove = (e) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    mx.set(((e.clientX - r.left) / r.width) * 2 - 1)
+    my.set(((e.clientY - r.top) / r.height) * 2 - 1)
+  }
+
+  const launch = (i, e) => {
+    trig.current = e.currentTarget
+    const r = badge.current.getBoundingClientRect()
+    setOpen({ i, x: r.left + r.width / 2, y: r.top + r.height / 2 })
+  }
   const close = useCallback(() => { setOpen(null); trig.current?.focus() }, [])
+
   const aside = (
-    <div ref={badge} aria-hidden className="mt-4 size-14 overflow-hidden rounded-full bg-paper shadow-[0_1px_2px_rgba(10,10,10,.15),0_6px_16px_rgba(10,10,10,.14)]">
-      <img src="/avatar.png" alt="" className="size-full origin-[50%_22%] scale-[1.9] object-cover object-[50%_10%]" />
-    </div>
+    <ProjectNarrator
+      badgeRef={badge}
+      hoveredIndex={hovered}
+      mx={mx}
+      my={my}
+    />
   )
+
   return (
     <>
-      <Section id="work" title="Selected work" aside={aside} className="bg-paper">
-        <ul className="grid gap-3 sm:grid-cols-3 [&:hover_.card:not(:hover)]:opacity-50">{c.projects.map((p, i) => <ProjectCard key={p.name} p={p} i={i} onOpen={launch} />)}</ul>
+      <Section
+        id="work"
+        title="Selected work"
+        aside={aside}
+        className="bg-paper"
+        sidebarClass="md:grid-cols-[220px_1fr] lg:grid-cols-[250px_1fr]"
+        onPointerMove={onPointerMove}
+      >
+        <ul className="grid gap-3 sm:grid-cols-3 [&:hover_.card:not(:hover)]:opacity-50">
+          {c.projects.map((p, i) => (
+            <ProjectCard
+              key={p.name}
+              p={p}
+              i={i}
+              onOpen={launch}
+              onHover={setHovered}
+            />
+          ))}
+        </ul>
       </Section>
-      <AnimatePresence>{open && <Overlay key={open.i} p={c.projects[open.i]} t={themes[open.i % themes.length]} origin={open} onClose={close} />}</AnimatePresence>
+      <AnimatePresence>
+        {open && (
+          <Overlay
+            key={open.i}
+            p={c.projects[open.i]}
+            t={themes[open.i % themes.length]}
+            origin={open}
+            onClose={close}
+          />
+        )}
+      </AnimatePresence>
     </>
   )
 }
